@@ -13,30 +13,30 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * When a player lands a hit with a mace, a single packed ring of cloud-particle
- * smoke bursts from the victim's torso and pans straight outward (no rising),
- * accompanied by heavy impact sounds.
+ * When a player lands a mace slam from at least 5 blocks up, a single packed
+ * ring of cloud-particle smoke bursts from the victim's torso and pans straight
+ * outward, accompanied by heavy impact sounds.
  */
 public class MaceSmokePlugin extends JavaPlugin implements Listener {
 
-    // How far out the ring expands, in blocks.
-    private static final double MAX_RADIUS = 5.0;
-    // Starting radius at the torso.
-    private static final double START_RADIUS = 0.4;
-    // How many blocks the ring expands per tick (controls launch speed).
-    private static final double EXPAND_PER_TICK = 0.45;
+    // The attacker must have fallen at least this many blocks for the effect to
+    // fire, so a normal ground hit does nothing.
+    private static final double MIN_FALL_HEIGHT = 5.0;
+    // How fast the single ring pans outward from the torso.
+    private static final double OUTWARD_SPEED = 0.5;
     // Particles around the ring. Higher = more packed.
     private static final int POINTS_PER_RING = 64;
+    // Radius the ring starts at, right around the body.
+    private static final double START_RADIUS = 0.4;
     // Fraction of the victim's height to use as the torso point (~chest level).
     private static final double TORSO_FRACTION = 0.6;
 
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("MaceSmoke enabled. Mace hits now release a smoke ring from the torso.");
+        getLogger().info("MaceSmoke enabled. Mace slams from 5+ blocks release a smoke ring.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -50,12 +50,17 @@ public class MaceSmokePlugin extends JavaPlugin implements Listener {
             return;
         }
 
+        // Only fire on a real slam from height, not a hit while on the ground.
+        if (player.getFallDistance() < MIN_FALL_HEIGHT) {
+            return;
+        }
+
         // Launch from the victim's torso (chest height).
         Location torso = event.getEntity().getLocation()
                 .add(0, event.getEntity().getHeight() * TORSO_FRACTION, 0);
 
         playHitSounds(torso);
-        spawnExpandingSmokeRing(torso);
+        spawnSmokeRing(torso);
     }
 
     private void playHitSounds(Location loc) {
@@ -71,35 +76,23 @@ public class MaceSmokePlugin extends JavaPlugin implements Listener {
         world.playSound(loc, Sound.ENTITY_WIND_CHARGE_WIND_BURST, SoundCategory.PLAYERS, 1.2f, 1.0f);
     }
 
-    private void spawnExpandingSmokeRing(Location center) {
+    private void spawnSmokeRing(Location center) {
         World world = center.getWorld();
         if (world == null) {
             return;
         }
 
-        new BukkitRunnable() {
-            double radius = START_RADIUS;
+        // One ring: each particle starts on the ring and is given an outward
+        // horizontal velocity, so a single ring pans straight out from the body.
+        for (int i = 0; i < POINTS_PER_RING; i++) {
+            double angle = (2 * Math.PI / POINTS_PER_RING) * i;
+            double dirX = Math.cos(angle);
+            double dirZ = Math.sin(angle);
+            Location point = center.clone().add(dirX * START_RADIUS, 0, dirZ * START_RADIUS);
 
-            @Override
-            public void run() {
-                if (radius > MAX_RADIUS) {
-                    cancel();
-                    return;
-                }
-
-                for (int i = 0; i < POINTS_PER_RING; i++) {
-                    double angle = (2 * Math.PI / POINTS_PER_RING) * i;
-                    double x = Math.cos(angle) * radius;
-                    double z = Math.sin(angle) * radius;
-                    Location point = center.clone().add(x, 0, z);
-
-                    // count > 0 with zero speed places packed particles that
-                    // linger where they spawn instead of flying off.
-                    world.spawnParticle(Particle.CLOUD, point, 2, 0.05, 0.05, 0.05, 0.0);
-                }
-
-                radius += EXPAND_PER_TICK;
-            }
-        }.runTaskTimer(this, 0L, 1L);
+            // count = 0 makes the offset act as a velocity vector and the final
+            // argument the speed, so the particle flies outward (no rising).
+            world.spawnParticle(Particle.CLOUD, point, 0, dirX, 0.0, dirZ, OUTWARD_SPEED);
+        }
     }
 }
