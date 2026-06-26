@@ -67,8 +67,8 @@ public class MaceSmokePlugin extends JavaPlugin implements Listener {
         world.playSound(loc, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, SoundCategory.PLAYERS, 1.4f, 1.0f);
         // Deep metallic thud for weight.
         world.playSound(loc, Sound.BLOCK_ANVIL_LAND, SoundCategory.PLAYERS, 0.7f, 0.5f);
-        // Airy boom for the smoke burst.
-        world.playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.6f, 1.3f);
+        // Whoosh of air for the smoke burst.
+        world.playSound(loc, Sound.ENTITY_WIND_CHARGE_WIND_BURST, SoundCategory.PLAYERS, 1.2f, 1.0f);
     }
 
     private void spawnExpandingSmokeRing(Location center) {
