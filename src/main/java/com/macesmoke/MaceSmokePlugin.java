@@ -12,24 +12,29 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * When a player lands a hit with a mace, an expanding circle of cloud-particle
- * smoke bursts out of the victim's body, flies outward fast, and lingers.
+ * When a player lands a hit with a mace, a single packed ring of cloud-particle
+ * smoke launches out of the victim's body and rises up to a max of 5 blocks.
  */
 public class MaceSmokePlugin extends JavaPlugin implements Listener {
 
-    // How fast the smoke shoots outward from the body.
-    private static final double OUTWARD_SPEED = 0.7;
-    // Number of particles around each horizontal ring.
-    private static final int POINTS_PER_RING = 28;
-    // Vertical layers so smoke billows from the whole body, not a single line.
-    private static final double[] RING_HEIGHTS = {-0.6, -0.2, 0.2, 0.6, 1.0};
+    // Maximum height the smoke ring rises, in blocks.
+    private static final double MAX_HEIGHT = 5.0;
+    // How many blocks the ring climbs per tick (controls launch speed).
+    private static final double RISE_PER_TICK = 0.5;
+    // Particles around the ring. Higher = more packed.
+    private static final int POINTS_PER_RING = 64;
+    // Starting radius of the ring at the body.
+    private static final double START_RADIUS = 0.5;
+    // How much the ring widens for every block it rises.
+    private static final double RADIUS_GROWTH = 0.25;
 
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
-        getLogger().info("MaceSmoke enabled. Mace hits now release a smoke circle.");
+        getLogger().info("MaceSmoke enabled. Mace hits now release a rising smoke circle.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -43,38 +48,42 @@ public class MaceSmokePlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        Entity victim = event.getEntity();
-        // Center the burst on the middle of the victim's body.
-        Location center = victim.getLocation().add(0, victim.getHeight() / 2.0, 0);
-        spawnSmokeCircle(center);
+        // Launch from the victim's feet so the ring rises up through the body.
+        spawnRisingSmokeRing(event.getEntity().getLocation());
     }
 
-    private void spawnSmokeCircle(Location center) {
-        World world = center.getWorld();
+    private void spawnRisingSmokeRing(Location base) {
+        World world = base.getWorld();
         if (world == null) {
             return;
         }
 
-        for (double dy : RING_HEIGHTS) {
-            Location ringCenter = center.clone().add(0, dy, 0);
-            for (int i = 0; i < POINTS_PER_RING; i++) {
-                double angle = (2 * Math.PI / POINTS_PER_RING) * i;
-                double dirX = Math.cos(angle);
-                double dirZ = Math.sin(angle);
-                // A slight vertical tilt by layer makes the cloud billow.
-                double dirY = dy * 0.15;
+        new BukkitRunnable() {
+            double height = 0.0;
 
-                // count = 0 makes the offset arguments act as a velocity vector
-                // and the final argument act as the speed multiplier, so each
-                // cloud particle shoots outward from the body and then lingers.
-                world.spawnParticle(
-                        Particle.CLOUD,
-                        ringCenter,
-                        0,
-                        dirX, dirY, dirZ,
-                        OUTWARD_SPEED
-                );
+            @Override
+            public void run() {
+                if (height > MAX_HEIGHT) {
+                    cancel();
+                    return;
+                }
+
+                double radius = START_RADIUS + height * RADIUS_GROWTH;
+                Location ringCenter = base.clone().add(0, height, 0);
+
+                for (int i = 0; i < POINTS_PER_RING; i++) {
+                    double angle = (2 * Math.PI / POINTS_PER_RING) * i;
+                    double x = Math.cos(angle) * radius;
+                    double z = Math.sin(angle) * radius;
+                    Location point = ringCenter.clone().add(x, 0, z);
+
+                    // count > 0 with zero speed places packed particles that
+                    // linger where they spawn instead of flying off.
+                    world.spawnParticle(Particle.CLOUD, point, 2, 0.05, 0.05, 0.05, 0.0);
+                }
+
+                height += RISE_PER_TICK;
             }
-        }
+        }.runTaskTimer(this, 0L, 1L);
     }
 }
