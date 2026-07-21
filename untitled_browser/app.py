@@ -1,8 +1,9 @@
 """Untitled Browser main window and application entry point."""
 
+import os
 import sys
 
-from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtCore import Qt, QTimer, QUrl
 from PyQt6.QtGui import QAction, QIcon, QKeySequence
 from PyQt6.QtWidgets import (
     QApplication,
@@ -257,6 +258,11 @@ def main() -> int:
         if not arg.startswith("-"):
             window.add_tab(to_url(arg))
     window.show()
+
+    # Used by CI to verify a packaged build starts up and shuts down cleanly.
+    if os.environ.get("UNTITLED_BROWSER_SMOKE"):
+        QTimer.singleShot(5000, app.quit)
+
     return app.exec()
 
 

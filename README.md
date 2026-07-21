@@ -30,6 +30,20 @@ python -m untitled_browser
 
 You can also pass URLs on the command line: `untitled-browser example.com`.
 
+## Windows executable
+
+The **Build Windows exe** GitHub Actions workflow packages the browser into a
+standalone `UntitledBrowser.exe` with PyInstaller and attaches it to a GitHub
+release (no Python install needed to run it). To build locally on a Windows
+machine instead:
+
+```bash
+pip install . pyinstaller
+pyinstaller --noconfirm --onefile --windowed --name UntitledBrowser launcher.py
+```
+
+The executable lands in `dist\UntitledBrowser.exe`.
+
 ## Keyboard shortcuts
 
 | Shortcut | Action |
