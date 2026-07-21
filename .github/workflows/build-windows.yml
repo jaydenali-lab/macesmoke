@@ -3,6 +3,7 @@ name: Build Windows exe
 on:
   workflow_dispatch:
   push:
+    branches: [main, "claude/**"]
     tags: ["v*"]
 
 permissions:
@@ -42,7 +43,6 @@ jobs:
           path: dist/UntitledBrowser.exe
 
       - name: Attach exe to release
-        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
