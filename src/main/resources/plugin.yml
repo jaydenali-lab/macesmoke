@@ -1,6 +1,0 @@
-name: MaceSmoke
-version: 1.0.0
-main: com.macesmoke.MaceSmokePlugin
-api-version: '1.21.11'
-description: Spawns an expanding cloud-particle smoke circle when a player is hit by a mace.
-author: MaceSmoke

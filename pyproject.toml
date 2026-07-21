@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "untitled-browser"
+version = "1.0.0"
+description = "Untitled Browser — a minimal tabbed web browser built with Python and Qt WebEngine."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "PyQt6>=6.6",
+    "PyQt6-WebEngine>=6.6",
+]
+
+[project.scripts]
+untitled-browser = "untitled_browser.app:main"
+
+[tool.setuptools.packages.find]
+include = ["untitled_browser*"]

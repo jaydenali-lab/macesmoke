@@ -1,32 +1,67 @@
-# MaceSmoke
+# Untitled Browser
 
-A Minecraft (Paper/Spigot **1.21.11**) plugin. When a player lands a hit with a
-**mace**, an expanding circle of `CLOUD` particles bursts out of the victim's
-body, flies outward fast, and lingers.
+A minimal tabbed web browser written in Python, powered by Qt WebEngine
+(the same Chromium engine used by real browsers).
 
-## Build
+## Features
+
+- Tabbed browsing: open, close, reorder, and cycle through tabs
+- Smart address bar: URLs load directly, anything else becomes a DuckDuckGo search
+- Back / forward / reload / stop navigation with live tab titles and favicons
+- Popups and `target="_blank"` links open in new tabs
+- File downloads (saved to your default download directory)
+- Per-tab zoom and a built-in dark start page
+
+## Getting started
+
+Requires Python 3.9+.
 
 ```bash
-mvn clean package
+pip install .
+untitled-browser
 ```
 
-The plugin jar is produced at `target/MaceSmoke.jar`.
+Or run straight from a checkout:
 
-## Install
+```bash
+pip install -r requirements.txt
+python -m untitled_browser
+```
 
-1. Drop `MaceSmoke.jar` into your server's `plugins/` folder.
-2. Restart the server (requires Java 21).
+You can also pass URLs on the command line: `untitled-browser example.com`.
 
-## How it works
+## Keyboard shortcuts
 
-The plugin listens for `EntityDamageByEntityEvent`. If the damager is a player
-holding a `MACE` in their main hand, it spawns rings of cloud particles at
-several body-height layers around the victim. Each particle is given an outward
-velocity so the smoke shoots out of the body and spreads, matching the
-"smoke circle" effect.
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+T` | New tab |
+| `Ctrl+W` | Close tab |
+| `Ctrl+L` | Focus the address bar |
+| `Ctrl+R` / `F5` | Reload |
+| `Alt+Left` / `Alt+Right` | Back / forward |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab` | Next / previous tab |
+| `Ctrl+=` / `Ctrl+-` / `Ctrl+0` | Zoom in / out / reset |
+| `Ctrl+Q` | Quit |
 
-Tweak the constants at the top of `MaceSmokePlugin.java` to change the effect:
+On macOS, use `Cmd` in place of `Ctrl`.
 
-- `OUTWARD_SPEED` — how fast the smoke flies out.
-- `POINTS_PER_RING` — density of the circle.
-- `RING_HEIGHTS` — vertical layers of the burst.
+## Project layout
+
+```
+untitled_browser/
+├── app.py         # main window, tabs, toolbar, shortcuts
+├── navigation.py  # address-bar input → URL (or search) logic
+├── start_page.py  # the built-in new-tab page
+└── __main__.py    # `python -m untitled_browser` entry point
+tests/
+└── test_navigation.py
+```
+
+## Tests
+
+The URL-handling logic is plain Python and tested without Qt:
+
+```bash
+pip install pytest
+pytest
+```

@@ -1,6 +1,8 @@
-target/
-*.iml
-.idea/
-.classpath
-.project
-.settings/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
